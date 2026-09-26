@@ -73,4 +73,5 @@ Base route: `/api/products`. Error responses have a JSON body `{ "error": "..." 
 
 ## ERRORS
 1. DeleteAsync in services has a product input but the controller gives a product id input.
-2. 
+2. DeleteAsync in Iservice
+3. Removed _context use in ProductsController
