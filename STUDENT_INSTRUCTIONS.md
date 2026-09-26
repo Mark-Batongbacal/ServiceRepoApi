@@ -70,3 +70,7 @@ Base route: `/api/products`. Error responses have a JSON body `{ "error": "..." 
 - Check the database directly (e.g. SSMS) to see what was really saved.
 - Read the app's console log when you get a 500.
 - For each bug you fix, write down the file, what was wrong, the symptom, and your fix.
+
+## ERRORS
+1. DeleteAsync in services has a product input but the controller gives a product id input.
+2. 

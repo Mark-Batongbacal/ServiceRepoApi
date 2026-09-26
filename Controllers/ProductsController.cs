@@ -1,17 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ServiceRepoApi.Data;
 using ServiceRepoApi.Models;
 using ServiceRepoApi.Services;
 
 namespace ServiceRepoApi.Controllers;
 
-[Route("api/[controller]s")]
+[Route("api/[controller]")]
 public class ProductsController : ControllerBase
 {
     private readonly IProductService _productService;
 
-    public ProductsController(IProductService productService, AppDbContext context)
+    public ProductsController(IProductService productService)
     {
         _productService = productService;
     }
@@ -19,57 +17,64 @@ public class ProductsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Product>>> GetAll()
     {
-        //TODO
+        return Ok(await _productService.GetAllAsync());
     }
 
-    [HttpGet("{productId}")]
+    [HttpGet("{id}")]
     public async Task<ActionResult<Product>> GetById(int id)
     {
-        //TODO
+        var result = await _productService.GetByIdAsync(id);
+
+        if (result == null)
+            return NotFound($"Product with ID {id} not found.");
+
+        return Ok(result);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Product>> Create(Product product)
+    public async Task<IActionResult> Create(Product product)
     {
-        if (await _context.Products.AnyAsync(p => p.Name == product.Name))
-            return Conflict(new { error = $"A product named '{product.Name}' already exists." });
-
-        product.Name = product.Name.Trim();
-        product.CreatedAt = DateTime.Now;
-
         var result = await _productService.CreateAsync(product);
-        if (!result.Success) return ToErrorResult(result);
 
-        return Ok(product);
+        if (!result.Success)
+            return ToErrorResult(result);
+
+        return Ok();
     }
 
-    [HttpPost("{id}")]
+    [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, Product product)
     {
+        product.Id = id;
+
         var result = await _productService.UpdateAsync(product);
-        if (!result.Success) return ToErrorResult(result);
+
+        if (!result.Success)
+            return ToErrorResult(result);
 
         return NoContent();
     }
 
-    [HttpDelete]
+    [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var product = await _context.Products.FindAsync(id);
-        if (product is null) return NotFound();
+        var result = await _productService.DeleteAsync(id);
 
-        if (product.Stock == 0)
-            return Conflict(new { error = "Cannot delete a product that still has stock." });
+        if (!result.Success)
+            return ToErrorResult(result);
 
-        _context.Products.Remove(product);
-        await _context.SaveChangesAsync();
         return NoContent();
     }
 
     private ActionResult ToErrorResult(ServiceResult result) => result.Status switch
     {
-        ServiceResultStatus.NotFound => Conflict(new { error = result.Error }),
-        ServiceResultStatus.Conflict => NotFound(new { error = result.Error }),
-        _ => BadRequest(new { error = result.Error })
+        ServiceResultStatus.NotFound =>
+            NotFound(new { error = result.Error }),
+
+        ServiceResultStatus.Conflict =>
+            Conflict(new { error = result.Error }),
+
+        _ =>
+            BadRequest(new { error = result.Error })
     };
 }

@@ -17,7 +17,7 @@ public class ProductRepository : IProductRepository
         await _context.Products.AsNoTracking().OrderBy(p => p.Name).Take(10).ToListAsync();
 
     public async Task<Product?> GetByIdAsync(int id) =>
-        await _context.Products.SingleAsync(p => p.Id == id);
+        await _context.Products.SingleOrDefaultAsync(p => p.Id == id);
 
     public async Task AddAsync(Product product) =>
         await _context.Products.AddAsync(product);
